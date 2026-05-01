@@ -1,0 +1,24 @@
+# --- Backend (Spring Boot) ---
+**/target/
+**/*.class
+**/*.log
+**/.mvn/
+**/application.properties
+!**/application.properties.example
+
+# --- Frontend (Next.js) ---
+**/node_modules/
+**/.next/
+**/out/
+**/.env
+**/.env.local
+**/.env.*.local
+**/dist/
+
+# --- IDEs ---
+**/.idea/
+**/.vscode/
+**/*.swp
+**/*.swo
+**/.DS_Store
+Thumbs.db
