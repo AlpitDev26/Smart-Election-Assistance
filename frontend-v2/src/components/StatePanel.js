@@ -2,180 +2,189 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { X, MapPin, Building, Award, ShieldCheck, History, Users, Info } from 'lucide-react';
+import { X, Landmark, Users, TrendingUp, Award, Building2, ShieldCheck, AlertCircle } from 'lucide-react';
 import { electionApi } from '@/lib/api';
 
 export default function StatePanel({ stateName, onClose }) {
-  const [data, setData] = useState(null);
+  const [data, setData] = useState({ details: null, parties: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    let isMounted = true;
     setLoading(true);
     setError(false);
-
     const fetchData = async () => {
       try {
-        const [statesRes, partiesRes, electionsRes] = await Promise.all([
-          electionApi.getStates().catch(() => ({ data: [] })),
-          electionApi.getPartiesByState(stateName).catch(() => ({ data: [] })),
-          electionApi.getElections(stateName).catch(() => ({ data: [] }))
+        // Map legacy GeoJSON names to modern Database names
+        const nameMap = {
+          'Orissa': 'Odisha',
+          'Uttaranchal': 'Uttarakhand',
+          'NCT of Delhi': 'Delhi'
+        };
+        const normalizedName = nameMap[stateName] || stateName;
+
+        const [statesRes, partiesRes] = await Promise.all([
+          electionApi.getStates().catch(() => []),
+          electionApi.getPartiesByState(normalizedName).catch(() => [])
         ]);
-
-        if (!isMounted) return;
-
-        const details = statesRes.data?.find(s => s.stateName === stateName);
         
+        const details = Array.isArray(statesRes) ? statesRes.find(s => s.stateName.toLowerCase() === normalizedName.toLowerCase()) : null;
         setData({
-          details: details || { stateName, currentCm: "Data Loading...", currentDeputyCm: "N/A" },
-          parties: partiesRes.data || [],
-          elections: electionsRes.data || []
+          details: details || { stateName, currentCm: "Data Pending (ECI Sync)", currentDeputyCm: "Pending", lokSabhaSeats: "-", vidhanSabhaSeats: "-" },
+          parties: Array.isArray(partiesRes) ? partiesRes : []
         });
         setLoading(false);
       } catch (err) {
-        console.error("Panel fetch error:", err);
-        if (isMounted) {
-          setError(true);
-          setLoading(false);
-        }
+        console.error("State Data Fetch Error:", err);
+        setError(true);
+        setLoading(false);
       }
     };
-
     fetchData();
-    return () => { isMounted = false; };
   }, [stateName]);
 
-  const StatCard = ({ label, value, icon: Icon, color }) => (
-    <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm flex items-center gap-3">
-      <div className={`p-2 rounded-lg ${color}`}>
-        <Icon size={16} />
+  const StatTile = ({ label, value, icon: Icon, color }) => (
+    <div style={{ 
+      background: '#ffffff', 
+      padding: '24px', 
+      borderRadius: '28px', 
+      border: '1px solid #f1f5f9', 
+      boxShadow: '0 4px 6px rgba(0,0,0,0.02)',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '12px'
+    }}>
+      <div style={{ width: '44px', height: '44px', borderRadius: '14px', background: color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Icon size={20} color="white" />
       </div>
       <div>
-        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{label}</p>
-        <p className="text-sm font-bold text-slate-800">{value || '0'}</p>
+        <p style={{ fontSize: '10px', color: '#94a3b8', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px' }}>{label}</p>
+        <p style={{ fontSize: '22px', fontWeight: '800', color: '#1e293b' }}>{value ?? '0'}</p>
       </div>
     </div>
   );
 
   return (
-    <motion.aside
+    <motion.div
       initial={{ x: '100%' }}
       animate={{ x: 0 }}
       exit={{ x: '100%' }}
       transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-      className="absolute top-0 right-0 h-full w-[480px] bg-white shadow-2xl z-[2000] border-l border-slate-200 flex flex-col"
+      style={{ 
+        position: 'absolute', 
+        top: 0, 
+        right: 0, 
+        height: '100%', 
+        width: '460px', 
+        background: 'white', 
+        boxShadow: '-20px 0 60px rgba(0,0,0,0.08)',
+        zIndex: 1000,
+        display: 'flex',
+        flexDirection: 'column',
+        borderLeft: '1px solid #f1f5f9'
+      }}
     >
-      <div className="p-6 bg-[#0B3D91] text-white flex justify-between items-center shrink-0">
-        <div>
-          <h2 className="text-2xl font-bold">{stateName}</h2>
-          <p className="text-blue-200 text-sm opacity-80 uppercase tracking-widest font-semibold">National Profile</p>
+      <div style={{ padding: '40px 40px 30px', borderBottom: '1px solid #f8fafc' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+          <div style={{ padding: '12px', background: '#eff6ff', borderRadius: '16px' }}>
+            <Landmark size={24} color="#0B3D91" />
+          </div>
+          <button onClick={onClose} style={{ background: '#f8fafc', border: 'none', padding: '10px', borderRadius: '50%', cursor: 'pointer' }}>
+            <X size={20} color="#64748b" />
+          </button>
         </div>
-        <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors">
-          <X size={24} />
-        </button>
+        <h2 style={{ fontSize: '32px', fontWeight: '800', color: '#0f172a', letterSpacing: '-1px' }}>{stateName}</h2>
+        <p style={{ fontSize: '11px', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '3px', marginTop: '4px' }}>Political Intelligence Report</p>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6 space-y-8">
+      <div style={{ flex: 1, overflowY: 'auto', padding: '0 40px 40px' }} className="custom-scrollbar">
         {loading ? (
-          <div className="flex flex-col items-center justify-center h-full space-y-4">
-            <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-            <p className="text-slate-400 animate-pulse font-medium">Fetching State Intelligence...</p>
+          <div style={{ height: '300px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
+            <div style={{ width: '32px', height: '32px', border: '3px solid #0B3D91', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+            <p style={{ fontSize: '10px', color: '#94a3b8', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px' }}>Analyzing State Data...</p>
           </div>
         ) : error ? (
-          <div className="flex flex-col items-center justify-center h-full text-center p-8">
-            <div className="p-4 bg-red-50 rounded-full mb-4">
-              <Info className="text-red-500" size={32} />
+          <div style={{ height: '300px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px', textAlign: 'center' }}>
+            <AlertCircle size={40} color="#ef4444" />
+            <div>
+              <p style={{ fontSize: '14px', fontWeight: '800', color: '#1e293b' }}>Connection Offline</p>
+              <p style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px' }}>Unable to fetch intelligence from national server.</p>
             </div>
-            <h4 className="text-slate-800 font-bold mb-2">Connection Issues</h4>
-            <p className="text-slate-500 text-sm mb-6">We couldn't reach the backend server. Please make sure the Spring Boot app is running.</p>
-            <button 
-              onClick={() => window.location.reload()}
-              className="px-6 py-2 bg-blue-600 text-white rounded-xl font-bold shadow-lg hover:bg-blue-700 transition-all"
-            >
-              Retry Connection
-            </button>
+            <button onClick={() => window.location.reload()} style={{ background: '#0B3D91', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '12px', fontSize: '11px', fontWeight: '700', cursor: 'pointer' }}>Retry Sync</button>
           </div>
         ) : (
-          <>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '40px', marginTop: '30px' }}>
             <section>
-              <h3 className="text-slate-800 font-bold mb-4 flex items-center gap-2">
-                <ShieldCheck className="text-blue-600" size={18} />
-                Constituency Breakdown
-              </h3>
-              <div className="grid grid-cols-3 gap-3">
-                <StatCard label="Lok Sabha" value={data.details?.lokSabhaSeats} icon={Building} color="bg-orange-100 text-orange-600" />
-                <StatCard label="Vidhan Sabha" value={data.details?.vidhanSabhaSeats} icon={Award} color="bg-blue-100 text-blue-600" />
-                <StatCard label="Rajya Sabha" value={data.details?.rajyaSabhaSeats} icon={MapPin} color="bg-green-100 text-green-600" />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
+                <ShieldCheck size={16} color="#0B3D91" />
+                <h3 style={{ fontSize: '11px', fontWeight: '800', color: '#475569', textTransform: 'uppercase', letterSpacing: '1px' }}>Constituency Matrix</h3>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <StatTile label="Lok Sabha" value={data.details?.lokSabhaSeats} icon={Building2} color="#0B3D91" />
+                <StatTile label="Vidhan Sabha" value={data.details?.vidhanSabhaSeats} icon={Award} color="#f97316" />
               </div>
             </section>
 
-            <section className="space-y-4">
-              <h3 className="text-slate-800 font-bold mb-4 flex items-center gap-2">
-                <Users className="text-blue-600" size={18} />
-                Leadership & Governance
-              </h3>
-              
-              <div className="space-y-3">
-                <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-50 to-white border border-blue-100 shadow-sm">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase">Chief Minister</p>
-                      <p className="font-bold text-slate-800">{data.details?.currentCm || 'N/A'}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-[10px] text-slate-400 font-bold uppercase">Deputy CM</p>
-                      <p className="font-bold text-slate-800 text-sm">{data.details?.currentDeputyCm || 'N/A'}</p>
-                    </div>
-                  </div>
+            <section>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
+                <Users size={16} color="#0B3D91" />
+                <h3 style={{ fontSize: '11px', fontWeight: '800', color: '#475569', textTransform: 'uppercase', letterSpacing: '1px' }}>Current Leadership</h3>
+              </div>
+              <div style={{ 
+                background: 'linear-gradient(135deg, #0B3D91 0%, #1e40af 100%)', 
+                padding: '32px', 
+                borderRadius: '32px', 
+                color: 'white',
+                boxShadow: '0 20px 40px -10px rgba(11,61,145,0.3)',
+                position: 'relative',
+                overflow: 'hidden'
+              }}>
+                <div style={{ position: 'absolute', top: '-20px', right: '-20px', opacity: 0.1 }}>
+                  <TrendingUp size={160} color="white" />
                 </div>
-
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 opacity-80">
-                  <div className="flex justify-between items-center grayscale-[50%]">
-                    <div>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase">Former CM</p>
-                      <p className="font-semibold text-slate-600">{data.details?.previousCm || 'N/A'}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-[10px] text-slate-400 font-bold uppercase">Former Deputy CM</p>
-                      <p className="font-semibold text-slate-600 text-xs">{data.details?.previousDeputyCm || 'N/A'}</p>
-                    </div>
-                  </div>
+                <div style={{ position: 'relative', zIndex: 1 }}>
+                  <p style={{ fontSize: '10px', fontWeight: '700', color: '#93c5fd', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '8px' }}>Chief Minister</p>
+                  <h4 style={{ fontSize: '24px', fontWeight: '800', marginBottom: '20px' }}>{data.details?.currentCm || 'Data Pending'}</h4>
+                  <div style={{ height: '1px', background: 'rgba(255,255,255,0.1)', marginBottom: '20px' }} />
+                  <p style={{ fontSize: '10px', fontWeight: '700', color: '#93c5fd', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '8px' }}>Deputy Leadership</p>
+                  <p style={{ fontSize: '14px', fontWeight: '600' }}>{data.details?.currentDeputyCm || 'N/A'}</p>
                 </div>
               </div>
             </section>
 
             <section>
-              <h3 className="text-slate-800 font-bold mb-4 flex items-center gap-2">
-                <Users className="text-blue-600" size={18} />
-                Political Parties
-              </h3>
-              {data.parties.length > 0 ? (
-                <div className="grid grid-cols-1 gap-3">
-                  {data.parties.map((party, i) => (
-                    <div key={i} className="p-3 border border-slate-100 rounded-xl bg-white shadow-sm flex justify-between items-center group hover:border-blue-200 transition-all">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center font-bold text-blue-600 text-xs">
-                          {party.symbol.substring(0, 1)}
-                        </div>
-                        <div>
-                          <p className="font-bold text-slate-800 text-sm">{party.name}</p>
-                          <p className="text-[10px] text-slate-400">Leader: {party.leader}</p>
-                        </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
+                <TrendingUp size={16} color="#0B3D91" />
+                <h3 style={{ fontSize: '11px', fontWeight: '800', color: '#475569', textTransform: 'uppercase', letterSpacing: '1px' }}>Regional Influence</h3>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {data.parties?.length > 0 ? data.parties.map((party, i) => (
+                  <div key={i} style={{ padding: '20px', background: '#f8fafc', borderRadius: '20px', border: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                      <div style={{ width: '40px', height: '40px', background: 'white', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', color: '#0B3D91', border: '1px solid #e2e8f0' }}>
+                        {party.symbol?.substring(0, 1) || 'P'}
                       </div>
-                      <span className="text-[10px] font-bold bg-blue-50 text-blue-600 px-2 py-0.5 rounded uppercase">{party.influence}</span>
+                      <div>
+                        <p style={{ fontSize: '14px', fontWeight: '700', color: '#1e293b' }}>{party.name}</p>
+                        <p style={{ fontSize: '11px', color: '#94a3b8', fontWeight: '600' }}>Leader: {party.leader}</p>
+                      </div>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="p-8 border-2 border-dashed border-slate-100 rounded-2xl text-center">
-                  <p className="text-slate-400 text-xs italic">Regional party data coming soon...</p>
-                </div>
-              )}
+                  </div>
+                )) : (
+                  <div style={{ padding: '20px', textAlign: 'center', border: '2px dashed #f1f5f9', borderRadius: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <p style={{ fontSize: '10px', color: '#94a3b8', fontWeight: '800', textTransform: 'uppercase' }}>No Regional Parties Mapped</p>
+                    <p style={{ fontSize: '9px', color: '#cbd5e1' }}>Data sync pending with ECI database.</p>
+                  </div>
+                )}
+              </div>
             </section>
-          </>
+          </div>
         )}
       </div>
-    </motion.aside>
+
+      <style jsx>{`
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+      `}</style>
+    </motion.div>
   );
 }

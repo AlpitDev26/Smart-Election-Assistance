@@ -1,32 +1,109 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { Radio, ChevronRight, Clock, ShieldCheck } from 'lucide-react';
 import { electionApi } from '@/lib/api';
 
 export default function EventFeed() {
   const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    electionApi.getEvents().then(res => {
-      if (res.success) setEvents(res.data);
-    });
+    electionApi.getEvents()
+      .then(res => {
+        setEvents(Array.isArray(res) ? res : []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
   }, []);
 
-  return (
-    <div className="space-y-6 relative before:absolute before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100 ml-1">
-      {events.map((event, i) => (
-        <div key={i} className="relative pl-8 group">
-          <div className="absolute left-0 top-1.5 w-6 h-6 rounded-full bg-white border-2 border-blue-600 flex items-center justify-center z-10 transition-transform group-hover:scale-110">
-            <div className="w-2 h-2 rounded-full bg-blue-600" />
-          </div>
-          <div>
-            <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">{new Date(event.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</p>
-            <h4 className="text-sm font-bold text-slate-800 leading-tight mt-1">{event.title}</h4>
-            <p className="text-xs text-slate-500 mt-1 line-clamp-2">{event.description}</p>
-          </div>
-        </div>
+  const getTagColor = (type) => {
+    switch(type) {
+      case 'Live': return { bg: '#fef2f2', text: '#ef4444' };
+      case 'Urgent': return { bg: '#fff7ed', text: '#f97316' };
+      case 'Update': return { bg: '#f0f9ff', text: '#0ea5e9' };
+      default: return { bg: '#f8fafc', text: '#64748b' };
+    }
+  };
+
+  if (loading) return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      {[1, 2, 3].map(i => (
+        <div key={i} style={{ height: '100px', background: '#f8fafc', borderRadius: '24px', animation: 'pulse 2s infinite' }} />
       ))}
-      {events.length === 0 && <p className="text-xs text-slate-400 italic text-center">No events found</p>}
+    </div>
+  );
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      {events.map((event, index) => {
+        const colors = getTagColor(event.eventType);
+        return (
+          <motion.div
+            key={index}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: index * 0.1 }}
+            style={{ 
+              padding: '24px', 
+              background: 'white', 
+              borderRadius: '24px', 
+              border: '1px solid #f1f5f9', 
+              boxShadow: '0 4px 12px rgba(0,0,0,0.02)',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease'
+            }}
+            className="news-card"
+            onMouseOver={(e) => { 
+              e.currentTarget.style.transform = 'translateY(-4px)';
+              e.currentTarget.style.boxShadow = '0 20px 40px -10px rgba(0,0,0,0.08)';
+              e.currentTarget.style.borderColor = '#e2e8f0';
+            }}
+            onMouseOut={(e) => { 
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.02)';
+              e.currentTarget.style.borderColor = '#f1f5f9';
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <div style={{ 
+                background: colors.bg, 
+                color: colors.text, 
+                padding: '4px 10px', 
+                borderRadius: '8px', 
+                fontSize: '10px', 
+                fontWeight: '800', 
+                textTransform: 'uppercase', 
+                letterSpacing: '1px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}>
+                {event.eventType === 'Live' && <Radio size={10} className="animate-pulse" />}
+                {event.eventType}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#94a3b8', fontSize: '10px', fontWeight: '600' }}>
+                <Clock size={12} />
+                {new Date(event.date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}
+              </div>
+            </div>
+            
+            <h3 style={{ fontSize: '14px', fontWeight: '700', color: '#1e293b', marginBottom: '8px', lineHeight: '1.4' }}>
+              {event.title}
+            </h3>
+            <p style={{ fontSize: '11px', color: '#64748b', lineHeight: '1.6', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+              {event.description}
+            </p>
+          </motion.div>
+        );
+      })}
+
+      <div style={{ padding: '20px', textAlign: 'center' }}>
+         <p style={{ fontSize: '10px', fontWeight: '800', color: '#cbd5e1', textTransform: 'uppercase', letterSpacing: '2px' }}>
+            Updates Verified
+         </p>
+      </div>
     </div>
   );
 }

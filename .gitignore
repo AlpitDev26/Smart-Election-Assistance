@@ -1,21 +1,19 @@
-# --- Backend (Spring Boot) ---
-**/target/
-**/*.class
-**/*.log
-**/.mvn/
-**/application.properties
-!**/application.properties.example
+# --- Backend (Django/Python) ---
+**/venv/
+**/__pycache__/
+**/*.pyc
+**/db.sqlite3
+**/.env
 
 # --- Frontend (Next.js) ---
 **/node_modules/
 **/.next/
 **/out/
-**/.env
 **/.env.local
 **/.env.*.local
 **/dist/
 
-# --- IDEs ---
+# --- IDEs & OS ---
 **/.idea/
 **/.vscode/
 **/*.swp

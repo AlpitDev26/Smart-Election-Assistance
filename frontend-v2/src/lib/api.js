@@ -9,13 +9,13 @@ const api = axios.create({
 
 // Production ready approach: standardizing request/response handling
 export const electionApi = {
-  getStates: () => api.get('/states').then(res => res.data),
-  getPartiesByState: (stateName) => api.get(`/parties/state/${stateName}`).then(res => res.data),
+  getStates: () => api.get('/states').then(res => res.data.data),
+  getPartiesByState: (stateName) => api.get(`/parties/state/${stateName}`).then(res => res.data.data),
   getElections: (stateName) => stateName 
-    ? api.get(`/elections/state/${stateName}`).then(res => res.data)
-    : api.get('/elections').then(res => res.data),
-  getEvents: () => api.get('/events').then(res => res.data),
-  sendMessage: (message) => api.post('/chat', { message }).then(res => res.data),
+    ? api.get(`/elections/state/${stateName}`).then(res => res.data.data)
+    : api.get('/elections').then(res => res.data.data),
+  getEvents: () => api.get('/events').then(res => res.data.data),
+  sendMessage: (message) => api.post('/chat', { message }).then(res => res.data.data),
 };
 
 export default api;

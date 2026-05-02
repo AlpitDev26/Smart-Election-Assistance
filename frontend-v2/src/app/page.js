@@ -1,113 +1,138 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   MessageSquare, 
   Map as MapIcon, 
   TrendingUp, 
-  ChevronRight,
-  Info
+  Newspaper,
+  Bell,
+  Globe,
+  Database,
+  Users
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
-import { electionApi } from '@/lib/api';
 import StatePanel from '@/components/StatePanel';
 import ElectionAssistant from '@/components/ElectionAssistant';
 import EventFeed from '@/components/EventFeed';
 
-// Dynamic import for Leaflet to avoid SSR issues
 const IndiaMap = dynamic(() => import('@/components/IndiaMap'), { 
   ssr: false,
-  loading: () => <div className="w-full h-full bg-slate-100 animate-pulse rounded-xl" />
+  loading: () => <div style={{width:'100%', height:'100%', background:'#f1f5f9', borderRadius:'24px', display:'flex', alignItems:'center', justifyContent:'center'}}>Loading Map...</div>
 });
 
 export default function Home() {
   const [selectedState, setSelectedState] = useState(null);
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
 
-  const handleStateSelect = (stateName) => {
-    setSelectedState(stateName);
-    setIsAssistantOpen(false);
-  };
-
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden text-slate-900">
-      {/* Sidebar - National Overview */}
-      <aside className="w-80 bg-white border-r border-slate-200 flex flex-col shadow-sm z-10">
-        <div className="p-6 border-bottom bg-[#0B3D91] text-white">
-          <h1 className="text-xl font-bold flex items-center gap-2">
-            <TrendingUp className="text-blue-200" />
-            Smart Election
-          </h1>
-          <p className="text-xs text-blue-100 mt-1 opacity-80">Election Commission of India</p>
+    <div className="app-wrapper">
+      {/* Sidebar */}
+      <aside className="sidebar">
+        <div style={{padding: '32px 32px 24px'}}>
+          <div style={{display:'flex', alignItems:'center', gap:'12px', marginBottom:'8px'}}>
+            <div style={{padding:'8px', background:'#0B3D91', borderRadius:'12px'}}>
+              <TrendingUp color="white" size={20} />
+            </div>
+            <h1 style={{fontSize:'20px', fontWeight:'700', letterSpacing:'-0.5px'}}>Smart Election</h1>
+          </div>
+          <p style={{fontSize:'10px', color:'#94a3b8', fontWeight:'700', textTransform:'uppercase', letterSpacing:'2px'}}>ECI Intelligence Hub</p>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 space-y-6">
-          <section>
-            <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4 px-2">
-              National Timeline
-            </h2>
-            <EventFeed />
-          </section>
-
-          <section>
-            <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4 px-2">
-              Major National Parties
-            </h2>
-            <div className="space-y-2">
-              {['BJP', 'INC', 'AAP', 'BSP'].map(party => (
-                <div key={party} className="p-3 rounded-lg border border-slate-100 bg-slate-50 flex items-center justify-between group hover:border-blue-200 transition-colors cursor-default">
-                  <span className="font-medium text-slate-700">{party}</span>
-                  <ChevronRight size={14} className="text-slate-300 group-hover:text-blue-500 transition-transform group-hover:translate-x-1" />
-                </div>
-              ))}
+        <div className="scroll-area custom-scrollbar">
+          <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'24px', padding:'0 8px'}}>
+            <div style={{display:'flex', alignItems:'center', gap:'8px'}}>
+              <Newspaper size={18} color="#0B3D91" />
+              <h2 style={{fontSize:'11px', fontWeight:'700', textTransform:'uppercase', letterSpacing:'1px'}}>Live Updates</h2>
             </div>
-          </section>
+            <div style={{background:'#fef2f2', padding:'4px 10px', borderRadius:'20px', display:'flex', alignItems:'center', gap:'6px'}}>
+              <div style={{width:'6px', height:'6px', background:'#ef4444', borderRadius:'50%'}} />
+              <span style={{fontSize:'9px', fontWeight:'700', color:'#ef4444', textTransform:'uppercase'}}>Live</span>
+            </div>
+          </div>
+          
+          <EventFeed />
+          
+          <div style={{marginTop:'40px', padding:'20px', background:'#eff6ff', borderRadius:'24px', border:'1px solid #dbeafe'}}>
+            <div style={{display:'flex', alignItems:'center', gap:'12px', marginBottom:'12px'}}>
+              <Globe size={14} color="#2563eb" />
+              <p style={{fontSize:'10px', fontWeight:'700', color:'#1e40af', textTransform:'uppercase'}}>Official Source</p>
+            </div>
+            <p style={{fontSize:'11px', color:'#1e40af', opacity:0.8, lineHeight:1.6}}>
+              Data synchronized with Election Commission of India National Data Warehouse.
+            </p>
+          </div>
         </div>
       </aside>
 
-      {/* Main Content - Map View */}
-      <main className="flex-1 relative flex flex-col bg-[#f8fafc]">
-        {/* Top Header */}
-        <header className="h-16 bg-white/80 backdrop-blur-sm border-b border-slate-200 flex items-center justify-between px-8 z-10">
-          <div className="flex items-center gap-4">
-            <span className="flex items-center gap-2 text-sm font-medium text-slate-600 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
-              <MapIcon size={16} className="text-blue-600" />
-              Interactive India Explorer
-            </span>
-            <p className="text-xs text-slate-400 font-medium">Click on any state to view details</p>
+      {/* Main Content */}
+      <main className="main-content">
+        <header className="top-header">
+          <div style={{display:'flex', alignItems:'center', gap:'20px'}}>
+            <div style={{background:'white', padding:'10px 20px', borderRadius:'16px', border:'1px solid #e2e8f0', display:'flex', alignItems:'center', gap:'10px', boxShadow:'0 2px 4px rgba(0,0,0,0.02)'}}>
+              <MapIcon size={18} color="#0B3D91" />
+              <span style={{fontSize:'14px', fontWeight:'700'}}>National Interactive Explorer</span>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-             <button 
-                onClick={() => setIsAssistantOpen(true)}
-                className="btn-primary flex items-center gap-2 text-sm"
-              >
+
+          <div style={{display:'flex', alignItems:'center', gap:'24px'}}>
+             <div style={{display:'flex', alignItems:'center', gap:'8px', fontSize:'12px', fontWeight:'700', color:'#94a3b8'}}>
+                <div style={{width:'8px', height:'8px', background:'#22c55e', borderRadius:'50%'}} />
+                SERVER ONLINE
+             </div>
+             <button onClick={() => setIsAssistantOpen(true)} className="btn-primary">
                 <MessageSquare size={18} />
-                Ask AI Assistant
+                Ask Election Bot
               </button>
           </div>
         </header>
 
-        {/* Map View Wrapper */}
-        <div className="flex-1 p-8 relative overflow-hidden">
-          <div className="w-full h-full glass-card overflow-hidden relative shadow-xl">
+        <div className="glass-card-container">
+          <div className="map-viewport">
             <IndiaMap 
-              onStateSelect={handleStateSelect} 
+              onStateSelect={(name) => {setSelectedState(name); setIsAssistantOpen(false);}} 
               selectedState={selectedState} 
             />
           </div>
+
+          <div className="stats-ribbon">
+             <div className="stat-card">
+                <p style={{fontSize:'10px', color:'#94a3b8', fontWeight:'700', textTransform:'uppercase', marginBottom:'4px'}}>Lok Sabha Seats</p>
+                <div style={{display:'flex', alignItems:'center', gap:'8px'}}>
+                  <span style={{fontSize:'24px', fontWeight:'700'}}>543</span>
+                  <Database size={16} color="#3b82f6" opacity={0.5} />
+                </div>
+             </div>
+             <div className="stat-card">
+                <p style={{fontSize:'10px', color:'#94a3b8', fontWeight:'700', textTransform:'uppercase', marginBottom:'4px'}}>Vidhan Sabha Seats</p>
+                <div style={{display:'flex', alignItems:'center', gap:'8px'}}>
+                  <span style={{fontSize:'24px', fontWeight:'700'}}>4,123</span>
+                  <Users size={16} color="#f97316" opacity={0.5} />
+                </div>
+             </div>
+             <div className="stat-card">
+                <p style={{fontSize:'10px', color:'#94a3b8', fontWeight:'700', textTransform:'uppercase', marginBottom:'4px'}}>Total Electorate</p>
+                <span style={{fontSize:'24px', fontWeight:'700'}}>96.8 Cr</span>
+             </div>
+             <div className="stat-card">
+                <p style={{fontSize:'10px', color:'#94a3b8', fontWeight:'700', textTransform:'uppercase', marginBottom:'4px'}}>Polling Stations</p>
+                <span style={{fontSize:'24px', fontWeight:'700'}}>12.5 L</span>
+             </div>
+          </div>
         </div>
 
-        {/* Sliding Side Panels */}
-        <AnimatePresence>
+        <AnimatePresence mode="wait">
           {selectedState && (
             <StatePanel 
+              key={selectedState}
               stateName={selectedState} 
               onClose={() => setSelectedState(null)} 
             />
           )}
           {isAssistantOpen && (
             <ElectionAssistant 
+              key="assistant"
               onClose={() => setIsAssistantOpen(false)} 
             />
           )}

@@ -1,126 +1,191 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { X, Send, Bot, User, Sparkles } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Send, User, Bot, Sparkles, ShieldCheck, RefreshCcw } from 'lucide-react';
 import { electionApi } from '@/lib/api';
 
-export default function ElectionAssistant({ onClose }) {
+export default function ElectionAssistant() {
   const [messages, setMessages] = useState([
-    { text: "Jai Hind! I'm your Smart Election Assistant. How can I help you understand the voting process today?", sender: 'bot' }
+    { role: 'bot', content: "Hello! I am your Verified Election Intelligence Assistant. How can I help you today?" }
   ]);
   const [input, setInput] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-  const scrollRef = useRef();
+  const [loading, setLoading] = useState(false);
+  const scrollRef = useRef(null);
 
+  // Auto-scroll to bottom on new messages
   useEffect(() => {
-    scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages, loading]);
 
-  const handleSend = async (textToSend) => {
-    const text = textToSend || input;
-    if (!text.trim()) return;
+  const handleSend = async (text) => {
+    const messageText = text || input;
+    if (!messageText.trim()) return;
 
-    setMessages(prev => [...prev, { text, sender: 'user' }]);
+    const userMsg = { role: 'user', content: messageText };
+    setMessages(prev => [...prev, userMsg]);
     setInput('');
-    setIsTyping(true);
+    setLoading(true);
 
     try {
-      const res = await electionApi.sendMessage(text);
-      if (res.success) {
-        setMessages(prev => [...prev, { text: res.data.response, sender: 'bot' }]);
-      }
+      const response = await electionApi.sendMessage(messageText);
+      const botMsg = { 
+        role: 'bot', 
+        content: response.reply || response.data?.reply || "I've analyzed that request. How else can I assist?" 
+      };
+      setMessages(prev => [...prev, botMsg]);
     } catch (err) {
-      setMessages(prev => [...prev, { text: "I'm having some trouble connecting right now. Please try again later.", sender: 'bot' }]);
+      setMessages(prev => [...prev, { 
+        role: 'bot', 
+        content: "I'm having trouble connecting to the intelligence server. Please ensure the backend is running on Port 8080." 
+      }]);
     } finally {
-      setIsTyping(false);
+      setLoading(false);
     }
   };
 
   return (
-    <motion.div
-      initial={{ x: '100%', opacity: 0 }}
-      animate={{ x: 0, opacity: 1 }}
-      exit={{ x: '100%', opacity: 0 }}
-      className="absolute top-0 right-0 h-full w-[400px] bg-white shadow-2xl z-30 flex flex-col border-l border-slate-200"
-    >
-      <div className="p-6 bg-gradient-to-br from-[#0B3D91] to-blue-800 text-white flex justify-between items-center shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center">
-            <Sparkles size={20} className="text-blue-200" />
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'white' }}>
+      {/* Verified Header */}
+      <div style={{ padding: '24px', background: '#0B3D91', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ padding: '10px', background: 'rgba(255,255,255,0.1)', borderRadius: '14px' }}>
+            <Bot size={22} />
           </div>
           <div>
-            <h2 className="font-bold text-lg leading-tight">Election Bot</h2>
-            <div className="flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-widest text-blue-200">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-              Online Assistant
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <h3 style={{ fontSize: '15px', fontWeight: '800', letterSpacing: '0.5px' }}>Election Bot</h3>
+              <ShieldCheck size={14} color="#10b981" />
             </div>
+            <p style={{ fontSize: '10px', color: '#93c5fd', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px' }}>Intelligence Online</p>
           </div>
         </div>
-        <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors">
-          <X size={20} />
-        </button>
+        <Sparkles size={18} color="#93c5fd" className="animate-pulse" />
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      {/* Messages Area */}
+      <div 
+        ref={scrollRef}
+        style={{ flex: 1, overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}
+        className="custom-scrollbar"
+      >
         {messages.map((msg, i) => (
-          <div key={i} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`flex gap-2 max-w-[85%] ${msg.sender === 'user' ? 'flex-row-reverse' : ''}`}>
-              <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                msg.sender === 'user' ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-600'
-              }`}>
-                {msg.sender === 'user' ? <User size={16} /> : <Bot size={16} />}
-              </div>
-              <div className={`p-3 rounded-2xl text-sm ${
-                msg.sender === 'user' 
-                ? 'bg-blue-600 text-white rounded-tr-none' 
-                : 'bg-slate-100 text-slate-800 rounded-tl-none shadow-sm'
-              }`}>
-                {msg.text}
-              </div>
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            style={{ 
+              alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
+              maxWidth: '85%',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '6px'
+            }}
+          >
+            <div style={{ 
+              padding: '16px 20px', 
+              borderRadius: msg.role === 'user' ? '24px 24px 4px 24px' : '24px 24px 24px 4px',
+              background: msg.role === 'user' ? '#0B3D91' : '#f8fafc',
+              color: msg.role === 'user' ? 'white' : '#1e293b',
+              boxShadow: msg.role === 'user' ? '0 10px 20px -5px rgba(11,61,145,0.3)' : '0 4px 6px rgba(0,0,0,0.02)',
+              fontSize: '13px',
+              lineHeight: '1.6',
+              border: msg.role === 'bot' ? '1px solid #f1f5f9' : 'none'
+            }}>
+              {msg.content}
             </div>
-          </div>
+          </motion.div>
         ))}
-        {isTyping && (
-          <div className="flex justify-start">
-             <div className="bg-slate-100 p-3 rounded-2xl rounded-tl-none animate-pulse text-slate-400 text-xs font-medium">
-               Bot is thinking...
-             </div>
-          </div>
+        {loading && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ alignSelf: 'flex-start' }}>
+            <div style={{ padding: '16px 20px', borderRadius: '24px', background: '#f8fafc', display: 'flex', gap: '4px' }}>
+              <span className="dot-pulse" style={{ width: '4px', height: '4px', background: '#94a3b8', borderRadius: '50%' }} />
+              <span className="dot-pulse" style={{ width: '4px', height: '4px', background: '#94a3b8', borderRadius: '50%', animationDelay: '0.2s' }} />
+              <span className="dot-pulse" style={{ width: '4px', height: '4px', background: '#94a3b8', borderRadius: '50%', animationDelay: '0.4s' }} />
+            </div>
+          </motion.div>
         )}
-        <div ref={scrollRef} />
       </div>
 
-      <div className="p-4 border-t border-slate-100 space-y-3">
-        <div className="flex flex-wrap gap-2">
-          {['How to vote?', 'Required IDs?', 'Polling Booth?'].map(q => (
-            <button 
-              key={q} 
-              onClick={() => handleSend(q)}
-              className="text-[10px] font-bold bg-slate-50 text-slate-500 border border-slate-200 px-2 py-1 rounded-md hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-colors"
-            >
-              {q}
-            </button>
-          ))}
-        </div>
-        <div className="flex gap-2 bg-slate-50 p-2 rounded-xl border border-slate-200">
-          <input 
-            type="text" 
-            placeholder="Type your question..." 
-            className="flex-1 bg-transparent border-none outline-none text-sm px-2 text-slate-800 placeholder:text-slate-400"
+      {/* Suggestion Chips */}
+      <div style={{ padding: '0 24px', display: 'flex', gap: '8px', overflowX: 'auto', whiteSpace: 'nowrap' }} className="no-scrollbar">
+        {['How to vote?', 'Check Voter ID', 'State Statistics'].map((chip) => (
+          <button
+            key={chip}
+            onClick={() => handleSend(chip)}
+            style={{ 
+              padding: '8px 16px', 
+              background: 'white', 
+              border: '1px solid #e2e8f0', 
+              borderRadius: '100px', 
+              fontSize: '11px', 
+              fontWeight: '700', 
+              color: '#475569',
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.borderColor = '#0B3D91'}
+            onMouseOut={(e) => e.currentTarget.style.borderColor = '#e2e8f0'}
+          >
+            {chip}
+          </button>
+        ))}
+      </div>
+
+      {/* Input Area */}
+      <div style={{ padding: '24px' }}>
+        <div style={{ 
+          background: '#f8fafc', 
+          borderRadius: '20px', 
+          padding: '8px', 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '8px',
+          border: '1px solid #f1f5f9'
+        }}>
+          <input
+            type="text"
             value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyPress={e => e.key === 'Enter' && handleSend()}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+            placeholder="Type your question..."
+            style={{ 
+              flex: 1, 
+              background: 'transparent', 
+              border: 'none', 
+              padding: '12px 16px', 
+              fontSize: '13px', 
+              outline: 'none',
+              color: '#1e293b'
+            }}
           />
-          <button 
+          <button
             onClick={() => handleSend()}
-            disabled={!input.trim()}
-            className="p-2 bg-blue-600 text-white rounded-lg disabled:opacity-50 hover:bg-blue-700 transition-colors"
+            style={{ 
+              background: '#0B3D91', 
+              color: 'white', 
+              border: 'none', 
+              padding: '12px', 
+              borderRadius: '14px', 
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s'
+            }}
           >
             <Send size={18} />
           </button>
         </div>
       </div>
-    </motion.div>
+
+      <style jsx>{`
+        .dot-pulse { animation: pulse 1.5s infinite ease-in-out; }
+        @keyframes pulse { 0%, 100% { opacity: 0.3; transform: scale(1); } 50% { opacity: 1; transform: scale(1.2); } }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+      `}</style>
+    </div>
   );
 }
