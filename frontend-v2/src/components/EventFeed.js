@@ -45,27 +45,38 @@ export default function EventFeed() {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: index * 0.1 }}
+            onClick={() => event.url && window.open(event.url, '_blank')}
             style={{ 
-              padding: '24px', 
+              padding: '20px', 
               background: 'white', 
               borderRadius: '24px', 
               border: '1px solid #f1f5f9', 
               boxShadow: '0 4px 12px rgba(0,0,0,0.02)',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease'
+              cursor: event.url ? 'pointer' : 'default',
+              transition: 'all 0.3s ease',
+              overflow: 'hidden'
             }}
             className="news-card"
             onMouseOver={(e) => { 
-              e.currentTarget.style.transform = 'translateY(-4px)';
-              e.currentTarget.style.boxShadow = '0 20px 40px -10px rgba(0,0,0,0.08)';
-              e.currentTarget.style.borderColor = '#e2e8f0';
+              if (event.url) {
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.boxShadow = '0 20px 40px -10px rgba(0,0,0,0.08)';
+                e.currentTarget.style.borderColor = '#e2e8f0';
+              }
             }}
             onMouseOut={(e) => { 
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.02)';
-              e.currentTarget.style.borderColor = '#f1f5f9';
+              if (event.url) {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.02)';
+                e.currentTarget.style.borderColor = '#f1f5f9';
+              }
             }}
           >
+            {event.image && (
+              <div style={{ width: '100%', height: '120px', marginBottom: '16px', borderRadius: '16px', overflow: 'hidden' }}>
+                <img src={event.image} alt={event.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </div>
+            )}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
               <div style={{ 
                 background: colors.bg, 
