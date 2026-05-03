@@ -1,6 +1,7 @@
 services:
   # --- Backend (Django) ---
   - type: web
+    plan: free
     name: election-backend
     runtime: python
     rootDir: backend-django
@@ -16,6 +17,7 @@ services:
 
   # --- Frontend (Next.js) ---
   - type: web
+    plan: free
     name: election-frontend
     runtime: node
     rootDir: frontend-v2
