@@ -1,0 +1,29 @@
+services:
+  # --- Backend (Django) ---
+  - type: web
+    name: election-backend
+    runtime: python
+    rootDir: backend-django
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn election_backend.wsgi
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.2
+      - key: GEMINI_API_KEY
+        sync: false # You will enter this in the Render UI
+      - key: NEWS_API_KEY
+        sync: false # You will enter this in the Render UI
+
+  # --- Frontend (Next.js) ---
+  - type: web
+    name: election-frontend
+    runtime: node
+    rootDir: frontend-v2
+    buildCommand: npm install; npm run build
+    startCommand: npm start
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        fromService:
+          type: web
+          name: election-backend
+          property: host
